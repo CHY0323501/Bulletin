@@ -519,13 +519,7 @@ function openAnnouncementPopup(row) {
     popupInstance.option('title',
         editingState.isCreate ? '新增公告' : `編輯公告 — ${editingState.announcement.title}`
     );
-    popupInstance.show();
-
-    // 進入 popup 預設停在第一頁
-    setTimeout(() => {
-        if (tabPanelInstance) tabPanelInstance.option('selectedIndex', 0);
-        renderPopupContent();
-    }, 0);
+    popupInstance.show(); // onShowing handler 會在內容掛好後 render
 }
 
 function buildAnnouncementPopup() {
@@ -535,24 +529,35 @@ function buildAnnouncementPopup() {
         showCloseButton: true,
         dragEnabled: true,
         hideOnOutsideClick: false,
+        onShowing: () => {
+            if (tabPanelInstance) tabPanelInstance.option('selectedIndex', 0);
+            renderPopupContent();
+        },
         contentTemplate: container => {
-            const $tab = $('<div>').appendTo(container);
+            const $tab = $('<div>').appendTo($(container));
             tabPanelInstance = $tab.dxTabPanel({
                 height: '100%',
                 animationEnabled: true,
                 swipeEnabled: false,
+                deferRendering: false,
                 items: [
                     {
                         title: '基本資料',
-                        template: el => $('<div id="tabBasic" class="popup-form">').appendTo(el)
+                        template: (data, index, element) => {
+                            $('<div id="tabBasic" class="popup-form">').appendTo($(element));
+                        }
                     },
                     {
                         title: '問卷設定',
-                        template: el => $('<div id="tabSurvey" class="popup-form">').appendTo(el)
+                        template: (data, index, element) => {
+                            $('<div id="tabSurvey" class="popup-form">').appendTo($(element));
+                        }
                     },
                     {
                         title: '作答結果',
-                        template: el => $('<div id="tabResult" class="popup-form">').appendTo(el)
+                        template: (data, index, element) => {
+                            $('<div id="tabResult" class="popup-form">').appendTo($(element));
+                        }
                     }
                 ]
             }).dxTabPanel('instance');
@@ -776,7 +781,7 @@ function renderAttachmentSection($tab) {
         invalidMaxFileSizeMessage: `檔案大小超過 ${maxText}`,
         onValueChanged: e => {
             const files = e.value || [];
-            // 過濾掉不合規的檔案（再保險一次）
+            if (!files.length) return; // reset() 會觸發空陣列事件，直接忽略
             files.forEach(f => {
                 const ext = helpers.getExt(f.name);
                 if (!cfg.allowedExtensions.includes(ext)) {
@@ -793,9 +798,9 @@ function renderAttachmentSection($tab) {
                 );
                 if (!exists) editingState.newFiles.push(f);
             });
-            // 清空 uploader 自身的 value，讓它可再次選擇同檔
-            e.component.reset();
             renderNewAttachments($section.find('.js-new-list'));
+            // 非同步清空 uploader 自身的 value，讓它可再次選擇同檔
+            setTimeout(() => e.component.reset(), 0);
         }
     });
 }
@@ -1147,7 +1152,10 @@ function renderResultContent($container, announcement, resp) {
 // ============================================================
 let resultPopupInstance = null;
 
+let resultPopupCurrentRow = null;
+
 function openSurveyResultPopup(row) {
+    resultPopupCurrentRow = row;
     if (!resultPopupInstance) {
         resultPopupInstance = $('#surveyResultPopup').dxPopup({
             width: 760,
@@ -1155,24 +1163,25 @@ function openSurveyResultPopup(row) {
             showCloseButton: true,
             dragEnabled: true,
             hideOnOutsideClick: true,
+            onShowing: () => {
+                const r = resultPopupCurrentRow;
+                if (!r) return;
+                const $body = $('#resultPopupBody').empty();
+                dataService.getSurveyResponses(r.id).then(resp => {
+                    if (!resp || !resp.totalResponses) {
+                        $body.append(`<div class="result-empty">尚無作答資料。</div>`);
+                        return;
+                    }
+                    renderResultContent($body, r, resp);
+                });
+            },
             contentTemplate: container => {
-                $('<div id="resultPopupBody" class="popup-form">').appendTo(container);
+                $('<div id="resultPopupBody" class="popup-form">').appendTo($(container));
             }
         }).dxPopup('instance');
     }
     resultPopupInstance.option('title', `作答結果 — ${row.title}`);
     resultPopupInstance.show();
-
-    setTimeout(() => {
-        const $body = $('#resultPopupBody').empty();
-        dataService.getSurveyResponses(row.id).then(resp => {
-            if (!resp || !resp.totalResponses) {
-                $body.append(`<div class="result-empty">尚無作答資料。</div>`);
-                return;
-            }
-            renderResultContent($body, row, resp);
-        });
-    }, 0);
 }
 
 // ============================================================
