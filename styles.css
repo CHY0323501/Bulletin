@@ -1,0 +1,308 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC",
+        "Microsoft JhengHei", "Helvetica Neue", Arial, sans-serif;
+    background-color: #f5f6f8;
+    color: #2b2f36;
+}
+
+.page-wrapper {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+.page-header {
+    margin-bottom: 20px;
+}
+
+.page-header h1 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.page-subtitle {
+    margin: 4px 0 0;
+    color: #8a8f99;
+    font-size: 13px;
+}
+
+/* ---------- Popup form ---------- */
+.popup-form {
+    padding: 4px 8px 8px;
+}
+
+.section-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #4a5160;
+    margin: 0 0 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #e3e6eb;
+}
+
+.field-row {
+    margin-bottom: 16px;
+}
+
+.field-label {
+    display: block;
+    font-size: 13px;
+    color: #4a5160;
+    margin-bottom: 6px;
+    font-weight: 500;
+}
+
+.field-label .required-mark {
+    color: #d9534f;
+    margin-left: 2px;
+}
+
+.field-hint {
+    font-size: 12px;
+    color: #8a8f99;
+    margin-top: 4px;
+}
+
+/* ---------- Attachments ---------- */
+.attachment-section {
+    border: 1px solid #e3e6eb;
+    border-radius: 6px;
+    padding: 12px;
+    background-color: #fafbfc;
+}
+
+.attachment-list {
+    margin-top: 8px;
+}
+
+.attachment-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background-color: #fff;
+    border: 1px solid #e3e6eb;
+    border-radius: 4px;
+    margin-bottom: 6px;
+}
+
+.attachment-item.is-new {
+    background-color: #f0f7ff;
+    border-color: #c5dcf7;
+}
+
+.attachment-item.is-removed {
+    text-decoration: line-through;
+    opacity: 0.55;
+    background-color: #fbecec;
+    border-color: #f0c8c8;
+}
+
+.attachment-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+}
+
+.attachment-name {
+    font-size: 13px;
+    color: #2b2f36;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.attachment-meta {
+    font-size: 12px;
+    color: #8a8f99;
+    flex-shrink: 0;
+}
+
+.attachment-badge {
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    background-color: #e8f1fc;
+    color: #2a7ade;
+    flex-shrink: 0;
+}
+
+.attachment-actions {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.attachment-empty {
+    padding: 12px;
+    text-align: center;
+    color: #8a8f99;
+    font-size: 13px;
+}
+
+/* ---------- Survey ---------- */
+.survey-question-list {
+    margin-top: 12px;
+}
+
+.survey-question-card {
+    border: 1px solid #e3e6eb;
+    border-radius: 6px;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+    background-color: #fff;
+}
+
+.survey-question-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.survey-question-index {
+    font-weight: 600;
+    color: #4a5160;
+    flex-shrink: 0;
+    min-width: 32px;
+}
+
+.survey-question-body {
+    flex: 1;
+}
+
+.survey-question-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.survey-options {
+    margin-top: 10px;
+    padding-left: 32px;
+}
+
+.survey-option-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.survey-option-marker {
+    color: #8a8f99;
+    flex-shrink: 0;
+    font-size: 13px;
+    min-width: 20px;
+}
+
+.survey-empty {
+    padding: 24px;
+    text-align: center;
+    color: #8a8f99;
+    border: 1px dashed #d6dae0;
+    border-radius: 6px;
+}
+
+.survey-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.survey-required-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #4a5160;
+}
+
+/* ---------- Survey result ---------- */
+.result-empty {
+    padding: 32px;
+    text-align: center;
+    color: #8a8f99;
+}
+
+.result-question {
+    border: 1px solid #e3e6eb;
+    border-radius: 6px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    background-color: #fff;
+}
+
+.result-question-title {
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: #2b2f36;
+}
+
+.result-bar-row {
+    display: grid;
+    grid-template-columns: 160px 1fr 80px;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+    font-size: 13px;
+}
+
+.result-bar-track {
+    height: 14px;
+    background-color: #eef0f3;
+    border-radius: 7px;
+    overflow: hidden;
+}
+
+.result-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4a90e2, #2a7ade);
+}
+
+.result-bar-value {
+    text-align: right;
+    color: #4a5160;
+}
+
+/* ---------- Importance pills in grid ---------- */
+.importance-pill {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.importance-normal {
+    background-color: #eef0f3;
+    color: #4a5160;
+}
+
+.importance-high {
+    background-color: #fde9e7;
+    color: #c0392b;
+}
+
+.survey-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 12px;
+    background-color: #e8f1fc;
+    color: #2a7ade;
+}
+
+.survey-tag.none {
+    background-color: #f3f4f6;
+    color: #8a8f99;
+}
