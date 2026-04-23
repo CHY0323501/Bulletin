@@ -1,266 +1,18 @@
 /* ============================================================
- * 公告設定維護 (Announcement Management)
+ * app.js — 公告維護頁
  * DevExtreme 24.1.3 + jQuery
  * ============================================================
- * 區塊配置：
- *   1. APP_CONFIG       — 全域可調參數（檔案大小限制、副檔名…）
- *   2. mockData         — Demo 用假資料
- *   3. dataService      — 資料存取抽象層 (TODO: 串實際 API 時只需改這層)
- *   4. state            — 目前編輯中的公告暫存狀態
- *   5. helpers          — 通用工具
- *   6. dataGrid         — 公告列表
- *   7. popup            — 新增/編輯公告主彈窗（含三個 Tab）
- *   8. attachments      — 附件清單與上傳
- *   9. surveyEditor     — 問卷題目編輯
- *  10. surveyResult     — 作答結果統計
+ * 依賴：data.js（APP_CONFIG / helpers / mock* / dataService）
+ *
+ *   1. state         — 目前編輯中的公告暫存
+ *   2. dataGrid      — 公告列表
+ *   3. popup         — 新增/編輯彈窗（含三個 Tab）
+ *   4. attachments   — 附件清單與上傳
+ *   5. surveyEditor  — 問卷題目編輯
+ *   6. surveyResult  — 作答結果統計
  * ============================================================ */
 
-// ============================================================
-// 1. APP_CONFIG
-// ============================================================
-const APP_CONFIG = {
-    fileUpload: {
-        maxFileSize: 10 * 1024 * 1024, // 10 MB
-        allowedExtensions: [
-            '.jpg', '.jpeg', '.png', '.gif',
-            '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
-            '.txt', '.csv', '.zip'
-        ]
-    },
-    importance: [
-        { value: 'normal', text: '一般' },
-        { value: 'high', text: '重要' }
-    ],
-    surveyTypes: [
-        { value: 'none', text: '無問卷' },
-        { value: 'single', text: '單選問答' },
-        { value: 'multi', text: '多選問答' }
-    ],
-    api: {
-        // TODO: 串實際 API 時填入 base url
-        baseUrl: '',
-        endpoints: {
-            announcements: '/api/announcements',
-            categories: '/api/announcement-categories',
-            attachmentUpload: '/api/attachments',
-            attachmentDownload: '/api/attachments/{id}/download',
-            surveyResponses: '/api/announcements/{id}/survey-responses'
-        }
-    }
-};
-
-// ============================================================
-// 2. mockData
-// ============================================================
-const mockCategories = [
-    { id: 'C001', name: '系統公告' },
-    { id: 'C002', name: '人事公告' },
-    { id: 'C003', name: '活動公告' },
-    { id: 'C004', name: '教育訓練' },
-    { id: 'C005', name: '資安宣導' }
-];
-
-const mockAnnouncements = [
-    {
-        id: 'A001',
-        title: '系統維護通知 (4/30 凌晨)',
-        content: '本系統將於 4/30 00:00 ~ 04:00 進行例行維護，期間服務將暫停。\n造成不便敬請見諒。',
-        categoryId: 'C001',
-        importance: 'high',
-        enabled: true,
-        createdAt: '2026-04-15T09:30:00',
-        attachments: [
-            { id: 'F001', name: '維護範圍說明.pdf', size: 348293, uploadedAt: '2026-04-15T09:30:00' }
-        ],
-        surveyType: 'none',
-        surveyQuestions: []
-    },
-    {
-        id: 'A002',
-        title: '新進員工教育訓練報名',
-        content: '本季新進同仁教育訓練將於 5 月份舉辦，請填寫以下問卷以利課程安排。',
-        categoryId: 'C004',
-        importance: 'normal',
-        enabled: true,
-        createdAt: '2026-04-10T14:20:00',
-        attachments: [],
-        surveyType: 'single',
-        surveyQuestions: [
-            {
-                id: 'Q001',
-                text: '您偏好的上課時段？',
-                required: true,
-                options: [
-                    { id: 'O001', text: '上午 (09:00-12:00)' },
-                    { id: 'O002', text: '下午 (13:30-16:30)' },
-                    { id: 'O003', text: '晚上 (18:30-21:00)' }
-                ]
-            },
-            {
-                id: 'Q002',
-                text: '是否需要提供餐點？',
-                required: false,
-                options: [
-                    { id: 'O004', text: '需要' },
-                    { id: 'O005', text: '不需要' }
-                ]
-            }
-        ]
-    },
-    {
-        id: 'A003',
-        title: '年度資安宣導：請選擇您有興趣的主題',
-        content: '本年度資安宣導課程開放票選，可複選感興趣的主題，將依結果安排講師。',
-        categoryId: 'C005',
-        importance: 'normal',
-        enabled: false,
-        createdAt: '2026-04-01T10:00:00',
-        attachments: [
-            { id: 'F002', name: '去年度資安事件統計.xlsx', size: 89234, uploadedAt: '2026-04-01T10:00:00' },
-            { id: 'F003', name: '資安政策摘要.pdf', size: 512440, uploadedAt: '2026-04-01T10:00:00' }
-        ],
-        surveyType: 'multi',
-        surveyQuestions: [
-            {
-                id: 'Q003',
-                text: '您有興趣的資安主題（可複選）',
-                required: true,
-                options: [
-                    { id: 'O006', text: '社交工程與釣魚郵件' },
-                    { id: 'O007', text: '密碼管理與多因子驗證' },
-                    { id: 'O008', text: '個資保護法規' },
-                    { id: 'O009', text: '勒索軟體防範' }
-                ]
-            }
-        ]
-    }
-];
-
-// 假的作答結果（announcementId -> questionId -> optionId -> count）
-const mockSurveyResponses = {
-    'A002': {
-        totalResponses: 47,
-        questions: {
-            'Q001': { 'O001': 18, 'O002': 22, 'O003': 7 },
-            'Q002': { 'O004': 31, 'O005': 16 }
-        }
-    },
-    'A003': {
-        totalResponses: 63,
-        questions: {
-            'Q003': { 'O006': 41, 'O007': 35, 'O008': 22, 'O009': 49 }
-        }
-    }
-};
-
-// ============================================================
-// 3. dataService — 資料存取抽象層
-// 串 API 時只改這層即可，UI 不用動
-// ============================================================
-const dataService = {
-    // ----- categories -----
-    getCategories() {
-        // TODO: return $.getJSON(APP_CONFIG.api.baseUrl + APP_CONFIG.api.endpoints.categories);
-        return Promise.resolve(JSON.parse(JSON.stringify(mockCategories)));
-    },
-
-    // ----- announcements -----
-    getAnnouncements() {
-        // TODO: return $.getJSON(APP_CONFIG.api.baseUrl + APP_CONFIG.api.endpoints.announcements);
-        return Promise.resolve(JSON.parse(JSON.stringify(mockAnnouncements)));
-    },
-
-    saveAnnouncement(payload) {
-        // payload: { announcement, removedAttachmentIds, newFiles }
-        // TODO: 實際應該是 multipart/form-data，附件分檔上傳
-        return new Promise((resolve) => {
-            const a = payload.announcement;
-            const isCreate = !a.id;
-
-            // 新增 / 修改
-            if (isCreate) {
-                a.id = 'A' + String(Date.now()).slice(-6);
-                a.createdAt = new Date().toISOString();
-                a.attachments = [];
-            } else {
-                const idx = mockAnnouncements.findIndex(x => x.id === a.id);
-                if (idx >= 0) {
-                    a.attachments = mockAnnouncements[idx].attachments || [];
-                }
-            }
-
-            // 移除附件
-            if (Array.isArray(payload.removedAttachmentIds) && payload.removedAttachmentIds.length) {
-                a.attachments = (a.attachments || []).filter(
-                    f => !payload.removedAttachmentIds.includes(f.id)
-                );
-            }
-
-            // 新增附件（demo：只記錄檔名 + 大小）
-            (payload.newFiles || []).forEach(file => {
-                a.attachments.push({
-                    id: 'F' + Math.random().toString(36).slice(2, 8).toUpperCase(),
-                    name: file.name,
-                    size: file.size,
-                    uploadedAt: new Date().toISOString()
-                });
-            });
-
-            if (isCreate) {
-                mockAnnouncements.unshift(a);
-            } else {
-                const idx = mockAnnouncements.findIndex(x => x.id === a.id);
-                if (idx >= 0) mockAnnouncements[idx] = a;
-            }
-
-            resolve(JSON.parse(JSON.stringify(a)));
-        });
-    },
-
-    deleteAnnouncement(id) {
-        // TODO: $.ajax DELETE
-        const idx = mockAnnouncements.findIndex(x => x.id === id);
-        if (idx >= 0) mockAnnouncements.splice(idx, 1);
-        delete mockSurveyResponses[id];
-        return Promise.resolve();
-    },
-
-    setEnabled(id, enabled) {
-        // TODO: $.ajax PATCH
-        const a = mockAnnouncements.find(x => x.id === id);
-        if (a) a.enabled = enabled;
-        return Promise.resolve();
-    },
-
-    // ----- attachments -----
-    downloadAttachment(file) {
-        // TODO: window.open(APP_CONFIG.api.baseUrl + endpoint.replace('{id}', file.id))
-        // demo：產一個假的 txt blob 讓使用者體驗下載動作
-        const content = `[Demo] 這是「${file.name}」的模擬下載內容。\n` +
-            `檔案大小: ${file.size} bytes\n` +
-            `上傳時間: ${file.uploadedAt}`;
-        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = file.name + '.demo.txt';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
-        return Promise.resolve();
-    },
-
-    // ----- survey results -----
-    getSurveyResponses(announcementId) {
-        // TODO: $.getJSON
-        return Promise.resolve(
-            mockSurveyResponses[announcementId]
-                ? JSON.parse(JSON.stringify(mockSurveyResponses[announcementId]))
-                : null
-        );
-    }
-};
+// (data-layer 已移至 data.js)
 
 // ============================================================
 // 4. state — 目前編輯中的公告暫存
@@ -281,39 +33,6 @@ function resetEditingState() {
     editingState.surveyQuestions = [];
 }
 
-// ============================================================
-// 5. helpers
-// ============================================================
-const helpers = {
-    formatBytes(bytes) {
-        if (bytes == null) return '';
-        if (bytes < 1024) return bytes + ' B';
-        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-        return (bytes / 1024 / 1024).toFixed(2) + ' MB';
-    },
-    formatDateTime(iso) {
-        if (!iso) return '';
-        const d = new Date(iso);
-        if (isNaN(d.getTime())) return iso;
-        const pad = n => String(n).padStart(2, '0');
-        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ` +
-            `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-    },
-    uniqueId(prefix) {
-        return (prefix || 'id') + '_' + Date.now().toString(36) +
-            Math.random().toString(36).slice(2, 6);
-    },
-    getExt(name) {
-        const i = name.lastIndexOf('.');
-        return i >= 0 ? name.slice(i).toLowerCase() : '';
-    },
-    notify(msg, type) {
-        DevExpress.ui.notify(msg, type || 'success', 2200);
-    },
-    deepClone(o) {
-        return JSON.parse(JSON.stringify(o));
-    }
-};
 
 // ============================================================
 // 6. dataGrid — 公告列表
@@ -534,7 +253,8 @@ function buildAnnouncementPopup() {
             renderPopupContent();
         },
         contentTemplate: container => {
-            const $tab = $('<div>').appendTo($(container));
+            $(container).css({ padding: 0, height: '100%' });
+            const $tab = $('<div style="height:100%">').appendTo($(container));
             tabPanelInstance = $tab.dxTabPanel({
                 height: '100%',
                 animationEnabled: true,
