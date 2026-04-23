@@ -50,11 +50,13 @@ function initDataGrid() {
         gridInstance = $('#announcementGrid').dxDataGrid({
             dataSource: announcements,
             keyExpr: 'id',
-            showBorders: true,
+            showBorders: false,
             showRowLines: true,
-            rowAlternationEnabled: true,
+            showColumnLines: false,
+            rowAlternationEnabled: false,
             columnAutoWidth: true,
             wordWrapEnabled: true,
+            columnHidingEnabled: true,
             paging: { pageSize: 10 },
             pager: {
                 visible: true,
@@ -85,12 +87,14 @@ function initDataGrid() {
                 {
                     dataField: 'title',
                     caption: '標題',
-                    minWidth: 220
+                    minWidth: 220,
+                    hidingPriority: 99 // 永不隱藏
                 },
                 {
                     dataField: 'categoryId',
                     caption: '類別',
                     width: 130,
+                    hidingPriority: 5,
                     lookup: {
                         dataSource: categoriesCache,
                         valueExpr: 'id',
@@ -100,8 +104,9 @@ function initDataGrid() {
                 {
                     dataField: 'importance',
                     caption: '重要程度',
-                    width: 100,
+                    width: 110,
                     alignment: 'center',
+                    hidingPriority: 6,
                     lookup: {
                         dataSource: APP_CONFIG.importance,
                         valueExpr: 'value',
@@ -117,8 +122,9 @@ function initDataGrid() {
                 {
                     dataField: 'surveyType',
                     caption: '問卷',
-                    width: 110,
+                    width: 100,
                     alignment: 'center',
+                    hidingPriority: 4,
                     lookup: {
                         dataSource: APP_CONFIG.surveyTypes,
                         valueExpr: 'value',
@@ -134,6 +140,7 @@ function initDataGrid() {
                     caption: '附件數',
                     width: 80,
                     alignment: 'center',
+                    hidingPriority: 1,
                     allowFiltering: false,
                     allowSorting: false,
                     calculateCellValue: row => (row.attachments || []).length
@@ -141,8 +148,9 @@ function initDataGrid() {
                 {
                     dataField: 'enabled',
                     caption: '啟用',
-                    width: 90,
+                    width: 100,
                     alignment: 'center',
+                    hidingPriority: 7,
                     dataType: 'boolean',
                     cellTemplate: (cell, info) => {
                         const on = !!info.value;
@@ -158,12 +166,14 @@ function initDataGrid() {
                     caption: '建立時間',
                     dataType: 'datetime',
                     width: 150,
+                    hidingPriority: 2,
                     format: 'yyyy-MM-dd HH:mm'
                 },
                 {
                     type: 'buttons',
                     caption: '操作',
-                    width: 160,
+                    width: 140,
+                    hidingPriority: 99, // 永不隱藏
                     buttons: [
                         {
                             hint: '編輯',
