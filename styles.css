@@ -334,13 +334,18 @@ a:hover { text-decoration: underline; }
     background: var(--color-danger-emphasis-hover);
 }
 
-/* outlined */
+/* outlined → treated as Primer secondary (white bg, grey border) for visual consistency */
+.dx-button-mode-outlined.dx-button-normal,
 .dx-button-mode-outlined.dx-button-default {
-    border: 1px solid var(--color-accent-emphasis);
-    color: var(--color-accent-emphasis);
+    background: var(--color-canvas-default);
+    border: 1px solid var(--color-border-default);
+    color: var(--color-fg-default);
+    box-shadow: var(--shadow-resting);
 }
+.dx-button-mode-outlined.dx-button-normal.dx-state-hover,
 .dx-button-mode-outlined.dx-button-default.dx-state-hover {
-    background: var(--color-accent-subtle);
+    background: var(--color-canvas-subtle);
+    border-color: var(--color-border-default);
 }
 
 /* text-only buttons (used in attachment/survey rows) */
@@ -1076,40 +1081,265 @@ a:hover { text-decoration: underline; }
 }
 
 /* ============================================================
- * Misc DevExtreme overrides
+ * DevExtreme controls
  * ============================================================ */
-.dx-radiobutton .dx-radiobutton-icon::before {
-    border-color: var(--color-border-default);
-}
-.dx-radiobutton.dx-radiobutton-checked .dx-radiobutton-icon-dot {
+
+/* radio (form only, not inside grid cells) */
+.popup-form .dx-radiobutton.dx-radiobutton-checked .dx-radiobutton-icon-dot,
+.fill-form .dx-radiobutton.dx-radiobutton-checked .dx-radiobutton-icon-dot {
     background: var(--color-accent-emphasis);
 }
-.dx-radiobutton.dx-radiobutton-checked .dx-radiobutton-icon::before {
+.popup-form .dx-radiobutton.dx-radiobutton-checked .dx-radiobutton-icon::before,
+.fill-form .dx-radiobutton.dx-radiobutton-checked .dx-radiobutton-icon::before {
     border-color: var(--color-accent-emphasis);
 }
 
-.dx-checkbox-checked .dx-checkbox-icon {
-    background: var(--color-accent-emphasis);
-    border-color: var(--color-accent-emphasis);
-}
-.dx-checkbox-checked .dx-checkbox-icon::before {
-    color: #fff;
+/* checkbox (form only, DO NOT affect DataGrid booleans) */
+.popup-form .dx-checkbox-checked .dx-checkbox-icon,
+.fill-form .dx-checkbox-checked .dx-checkbox-icon {
+    color: var(--color-accent-emphasis);
 }
 
-.dx-switch-on-value .dx-switch-handle::before {
-    background: var(--color-accent-emphasis);
-}
+/* switch */
 .dx-switch-on-value .dx-switch-container {
+    background: var(--color-accent-emphasis);
     border-color: var(--color-accent-emphasis);
 }
 
-.dx-fileuploader-wrapper {
-    padding: 0;
-}
-
+/* file uploader drop zone */
+.dx-fileuploader-wrapper { padding: 0; }
 .dx-fileuploader-input-wrapper {
     border: 1px dashed var(--color-border-default);
     border-radius: var(--radius-md);
     background: var(--color-canvas-default);
     padding: 16px;
+    transition: border-color 0.12s, background 0.12s;
+}
+.dx-fileuploader-input-wrapper:hover {
+    border-color: var(--color-accent-emphasis);
+    background: var(--color-accent-subtle);
+}
+
+/* ============================================================
+ * Sizing — Primer uses 32px height for all interactive controls
+ * ============================================================ */
+.dx-button {
+    min-height: 32px;
+    font-weight: 500;
+    font-size: 14px;
+}
+.dx-button .dx-button-content {
+    padding: 5px 12px;
+}
+.dx-button-has-icon:not(.dx-button-has-text) .dx-button-content {
+    padding: 0;
+    min-width: 32px;
+}
+.dx-button-has-icon.dx-button-has-text .dx-icon {
+    margin-right: 6px;
+}
+
+.dx-texteditor .dx-texteditor-input {
+    min-height: 30px;
+    padding: 5px 10px;
+    font-size: 14px;
+    line-height: 20px;
+}
+.dx-textarea .dx-texteditor-input {
+    min-height: auto;
+    padding: 8px 10px;
+}
+
+/* ============================================================
+ * DataGrid — toolbar, pager, action icons
+ * ============================================================ */
+.dx-datagrid-header-panel {
+    background: transparent;
+    border-bottom: 1px solid var(--color-border-default);
+    padding: 10px 12px;
+}
+.dx-datagrid-header-panel .dx-toolbar {
+    background: transparent;
+}
+
+.dx-datagrid .dx-header-row > td {
+    padding-top: 8px;
+    padding-bottom: 8px;
+    font-size: 12px;
+    color: var(--color-fg-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.dx-datagrid .dx-row.dx-data-row > td {
+    font-size: 14px;
+    color: var(--color-fg-default);
+}
+
+/* Row action buttons (edit / chart / trash column) */
+.dx-datagrid-rowsview .dx-link {
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    color: var(--color-fg-muted);
+    transition: background 0.1s, color 0.1s;
+    text-decoration: none !important;
+    font-size: 14px;
+}
+.dx-datagrid-rowsview .dx-link:hover {
+    background: var(--color-neutral-muted);
+    color: var(--color-fg-default);
+}
+.dx-datagrid-rowsview .dx-link.dx-link-delete,
+.dx-datagrid-rowsview .dx-link-icon.dx-icon-trash:hover {
+    color: var(--color-danger-fg);
+}
+
+/* Pager */
+.dx-datagrid-pager {
+    padding: 8px 12px;
+}
+.dx-pager .dx-pages .dx-page,
+.dx-pager .dx-page-sizes .dx-page-size {
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    color: var(--color-fg-default);
+    background: transparent;
+    transition: background 0.1s, color 0.1s;
+}
+.dx-pager .dx-pages .dx-page:hover,
+.dx-pager .dx-page-sizes .dx-page-size:hover {
+    background: var(--color-neutral-muted);
+}
+.dx-pager .dx-pages .dx-selection,
+.dx-pager .dx-page-sizes .dx-selection {
+    background: var(--color-accent-emphasis) !important;
+    color: #fff !important;
+}
+.dx-pager .dx-navigate-button {
+    color: var(--color-fg-muted);
+}
+.dx-pager .dx-info {
+    color: var(--color-fg-muted);
+    font-size: 12px;
+}
+
+/* Search panel */
+.dx-datagrid-search-panel {
+    margin-left: 0;
+    width: 280px;
+}
+
+/* Filter row */
+.dx-datagrid .dx-row-filter > td {
+    background: var(--color-canvas-subtle);
+}
+
+/* ============================================================
+ * Boolean status pill (used by 啟用 column)
+ * ============================================================ */
+.status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 0 8px;
+    border-radius: var(--radius-pill);
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 20px;
+    border: 1px solid transparent;
+}
+.status-pill .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.status-on {
+    background: var(--color-success-subtle);
+    color: var(--color-success-fg);
+    border-color: #aceebb;
+}
+.status-on .status-dot { background: var(--color-success-emphasis); }
+.status-off {
+    background: var(--color-neutral-muted);
+    color: var(--color-fg-muted);
+    border-color: var(--color-border-default);
+}
+.status-off .status-dot { background: var(--color-fg-subtle); }
+
+/* ============================================================
+ * Popup toolbar buttons & title polish
+ * ============================================================ */
+.dx-popup-bottom .dx-toolbar-items-container {
+    height: auto;
+}
+.dx-popup-bottom .dx-button {
+    margin-left: 6px;
+}
+.dx-popup-title .dx-closebutton {
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-sm);
+}
+.dx-popup-title .dx-closebutton:hover {
+    background: var(--color-neutral-muted);
+}
+
+/* ============================================================
+ * Toast / Notification (dxToast)
+ * ============================================================ */
+.dx-toast-content {
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border-default);
+    box-shadow: var(--shadow-overlay);
+    padding: 10px 14px;
+}
+.dx-toast-success .dx-toast-content {
+    background: var(--color-success-subtle);
+    color: var(--color-success-fg);
+    border-color: #aceebb;
+}
+.dx-toast-error .dx-toast-content {
+    background: var(--color-danger-subtle);
+    color: var(--color-danger-fg);
+    border-color: #ffcecb;
+}
+.dx-toast-warning .dx-toast-content {
+    background: var(--color-attention-subtle);
+    color: var(--color-attention-fg);
+    border-color: #f5c95c;
+}
+
+/* ============================================================
+ * Dropdown / TagBox list
+ * ============================================================ */
+.dx-list-item {
+    color: var(--color-fg-default);
+    border-top: 1px solid var(--color-border-muted);
+}
+.dx-list-item:first-child { border-top: none; }
+.dx-list-item.dx-state-hover,
+.dx-list-item.dx-state-focused {
+    background: var(--color-canvas-subtle);
+}
+.dx-list-item.dx-list-item-selected {
+    background: var(--color-accent-subtle);
+}
+
+/* ============================================================
+ * Dialog (DevExpress.ui.dialog)
+ * ============================================================ */
+.dx-dialog .dx-dialog-message {
+    color: var(--color-fg-default);
+    font-size: 14px;
+    line-height: 1.5;
+}
+.dx-dialog .dx-popup-bottom .dx-button {
+    min-width: 80px;
 }

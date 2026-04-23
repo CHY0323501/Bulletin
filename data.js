@@ -32,7 +32,7 @@ const APP_CONFIG = {
     ],
     storage: {
         announcementsKey: 'bulletin.announcements.v1',
-        responsesKey: 'bulletin.surveyResponses.v1'
+        responsesKey: 'bulletin.surveyResponses.v2' // v2: 結構改為 { responses: [] }
     },
     api: {
         // TODO: 串實際 API 時填入 base url
@@ -400,7 +400,9 @@ const dataService = {
      */
     submitSurveyResponse(announcementId, payload) {
         return new Promise(resolve => {
-            if (!mockSurveyResponses[announcementId]) {
+            // 防禦：若 bucket 不存在或 responses 不是陣列（可能是舊版 localStorage 資料），重建
+            const existing = mockSurveyResponses[announcementId];
+            if (!existing || !Array.isArray(existing.responses)) {
                 mockSurveyResponses[announcementId] = { responses: [] };
             }
             const bucket = mockSurveyResponses[announcementId];

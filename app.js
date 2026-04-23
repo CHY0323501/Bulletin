@@ -141,9 +141,17 @@ function initDataGrid() {
                 {
                     dataField: 'enabled',
                     caption: '啟用',
-                    width: 80,
+                    width: 90,
                     alignment: 'center',
-                    dataType: 'boolean'
+                    dataType: 'boolean',
+                    cellTemplate: (cell, info) => {
+                        const on = !!info.value;
+                        cell.append(
+                            on
+                                ? '<span class="status-pill status-on"><span class="status-dot"></span>已啟用</span>'
+                                : '<span class="status-pill status-off"><span class="status-dot"></span>停用</span>'
+                        );
+                    }
                 },
                 {
                     dataField: 'createdAt',
