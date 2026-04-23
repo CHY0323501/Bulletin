@@ -151,7 +151,7 @@ function renderFillView(announcement) {
     // 附件區
     if ((a.attachments || []).length) {
         const $att = $('<div class="fill-attachments">').appendTo($header);
-        $att.append('<div style="font-size:12px;color:var(--ink-500);margin-bottom:6px;">📎 附件</div>');
+        $att.append('<div style="font-size:12px;color:var(--color-fg-muted);margin-bottom:6px;">📎 附件</div>');
         a.attachments.forEach(f => {
             const $chip = $(`
                 <span class="fill-attachment-chip">
@@ -165,8 +165,8 @@ function renderFillView(announcement) {
 
     // 填寫人姓名（必填）
     const $nameRow = $(`
-        <div class="fill-question" style="background:var(--surface-tint);padding:14px 16px;border-radius:var(--radius-sm);border-left:3px solid var(--accent);">
-            <div class="fill-question-title">
+        <div class="fill-respondent-box">
+            <div class="fill-question-title" style="margin-bottom:8px;">
                 <span class="fill-question-index">👤</span>填寫人姓名<span class="fill-required-mark">*</span>
             </div>
             <div class="js-respondent" style="max-width:320px;"></div>

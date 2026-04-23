@@ -641,10 +641,8 @@ function renderSurveyQuestions($body) {
     // 工具列：新增題目
     const $toolbar = $('<div class="survey-toolbar">').appendTo($body);
     $('<div>').appendTo($toolbar).html(`
-        <strong>題目清單</strong>
-        <span style="color:#8a8f99;margin-left:8px;font-size:12px;">
-            共 ${editingState.surveyQuestions.length} 題
-        </span>
+        <span class="survey-toolbar-title">題目清單</span>
+        <span class="survey-toolbar-count">共 ${editingState.surveyQuestions.length} 題</span>
     `);
     $('<div>').appendTo($toolbar).dxButton({
         icon: 'plus',
@@ -901,7 +899,7 @@ function renderAggregationView($container, announcement, resp) {
                 <div class="result-bar-row">
                     <div class="result-bar-label" title="${helpers.escapeHtml(opt.text)}">${helpers.escapeHtml(opt.text)}</div>
                     <div class="result-bar-track"><div class="result-bar-fill" style="width:${barPct}%"></div></div>
-                    <div class="result-bar-value">${c} <span style="color:var(--ink-500);">(${pct}%)</span></div>
+                    <div class="result-bar-value">${c} <span style="color:var(--color-fg-muted);">(${pct}%)</span></div>
                 </div>
             `);
         });
@@ -975,7 +973,7 @@ function renderIndividualView($container, announcement, list) {
                     const summary = announcement.surveyQuestions.map((q, i) =>
                         `Q${i + 1}: ${answerToText(q.id, ans[q.id])}`
                     ).join(' ｜ ');
-                    cell.append(`<span style="color:var(--ink-700);font-size:12px;">${helpers.escapeHtml(summary)}</span>`);
+                    cell.append(`<span style="color:var(--color-fg-default);font-size:12px;">${helpers.escapeHtml(summary)}</span>`);
                 }
             }
         ],
@@ -983,24 +981,24 @@ function renderIndividualView($container, announcement, list) {
             enabled: true,
             template: (container, options) => {
                 const r = options.data;
-                const $box = $('<div style="padding:14px 18px;background:var(--surface-tint);">').appendTo(container);
+                const $box = $('<div style="padding:14px 18px;background:var(--color-canvas-subtle);">').appendTo(container);
                 $box.append(`
                     <div style="margin-bottom:10px;display:flex;gap:14px;align-items:baseline;">
                         <strong style="font-size:14px;">${helpers.escapeHtml(r.respondent)}</strong>
-                        <span style="color:var(--ink-500);font-size:12px;">送出於 ${helpers.formatDateTime(r.submittedAt)}</span>
+                        <span style="color:var(--color-fg-muted);font-size:12px;">送出於 ${helpers.formatDateTime(r.submittedAt)}</span>
                     </div>
                 `);
                 announcement.surveyQuestions.forEach((q, i) => {
                     const text = answerToText(q.id, r.answers[q.id]);
                     $box.append(`
-                        <div style="margin-bottom:10px;padding:10px 12px;background:var(--surface);border-radius:6px;border:1px solid var(--ink-100);">
-                            <div style="font-size:13px;color:var(--ink-700);margin-bottom:4px;">
-                                <span style="color:var(--primary);font-weight:600;">Q${i + 1}.</span>
+                        <div style="margin-bottom:10px;padding:10px 12px;background:var(--color-canvas-default);border-radius:6px;border:1px solid var(--color-border-muted);">
+                            <div style="font-size:13px;color:var(--color-fg-default);margin-bottom:4px;">
+                                <span style="color:var(--color-accent-fg);font-weight:600;">Q${i + 1}.</span>
                                 ${helpers.escapeHtml(q.text)}
                                 ${q.required ? '<span class="result-question-required">必填</span>' : ''}
                             </div>
-                            <div style="font-size:14px;color:var(--ink-900);font-weight:500;padding-left:8px;">
-                                ${text ? '→ ' + helpers.escapeHtml(text) : '<span style="color:var(--ink-300);">（未作答）</span>'}
+                            <div style="font-size:14px;color:var(--color-fg-default);font-weight:500;padding-left:8px;">
+                                ${text ? '→ ' + helpers.escapeHtml(text) : '<span style="color:var(--color-fg-subtle);">（未作答）</span>'}
                             </div>
                         </div>
                     `);
