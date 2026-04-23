@@ -172,21 +172,56 @@ const defaultAnnouncements = [
     }
 ];
 
+// 每筆作答獨立儲存：announcementId -> { responses: [{ id, respondent, submittedAt, answers }] }
 const defaultSurveyResponses = {
     'A002': {
-        totalResponses: 47,
-        questions: {
-            'Q001': { 'O001': 18, 'O002': 22, 'O003': 7 },
-            'Q002': { 'O004': 31, 'O005': 16 }
-        }
+        responses: [
+            { id: 'R001', respondent: '張小明', submittedAt: '2026-04-11T09:12:00', answers: { Q001: 'O001', Q002: 'O004' } },
+            { id: 'R002', respondent: '王大華', submittedAt: '2026-04-11T09:34:00', answers: { Q001: 'O002', Q002: 'O005' } },
+            { id: 'R003', respondent: '李美玲', submittedAt: '2026-04-11T10:02:00', answers: { Q001: 'O002', Q002: 'O004' } },
+            { id: 'R004', respondent: '陳志強', submittedAt: '2026-04-11T10:18:00', answers: { Q001: 'O001', Q002: 'O004' } },
+            { id: 'R005', respondent: '林淑芬', submittedAt: '2026-04-11T10:45:00', answers: { Q001: 'O003', Q002: 'O005' } },
+            { id: 'R006', respondent: '黃俊雄', submittedAt: '2026-04-11T11:08:00', answers: { Q001: 'O002', Q002: 'O004' } },
+            { id: 'R007', respondent: '吳怡君', submittedAt: '2026-04-11T13:22:00', answers: { Q001: 'O001', Q002: 'O005' } },
+            { id: 'R008', respondent: '趙建宏', submittedAt: '2026-04-11T14:01:00', answers: { Q001: 'O002', Q002: 'O004' } },
+            { id: 'R009', respondent: '周麗華', submittedAt: '2026-04-11T15:18:00', answers: { Q001: 'O003', Q002: 'O004' } },
+            { id: 'R010', respondent: '鄭文杰', submittedAt: '2026-04-12T08:30:00', answers: { Q001: 'O001', Q002: 'O005' } },
+            { id: 'R011', respondent: '何思慧', submittedAt: '2026-04-12T09:14:00', answers: { Q001: 'O002', Q002: 'O004' } },
+            { id: 'R012', respondent: '劉明德', submittedAt: '2026-04-12T10:50:00', answers: { Q001: 'O002', Q002: 'O004' } }
+        ]
     },
     'A003': {
-        totalResponses: 63,
-        questions: {
-            'Q003': { 'O006': 41, 'O007': 35, 'O008': 22, 'O009': 49 }
-        }
+        responses: [
+            { id: 'R101', respondent: '林佳蓉', submittedAt: '2026-04-02T08:42:00', answers: { Q003: ['O006', 'O008', 'O009'] } },
+            { id: 'R102', respondent: '蔡家偉', submittedAt: '2026-04-02T09:11:00', answers: { Q003: ['O007', 'O009'] } },
+            { id: 'R103', respondent: '簡淑娟', submittedAt: '2026-04-02T09:55:00', answers: { Q003: ['O006', 'O007', 'O009'] } },
+            { id: 'R104', respondent: '朱國鼎', submittedAt: '2026-04-02T10:33:00', answers: { Q003: ['O006', 'O008'] } },
+            { id: 'R105', respondent: '高雅琪', submittedAt: '2026-04-02T11:20:00', answers: { Q003: ['O007', 'O009'] } },
+            { id: 'R106', respondent: '楊志文', submittedAt: '2026-04-02T13:48:00', answers: { Q003: ['O006', 'O007'] } },
+            { id: 'R107', respondent: '謝芳怡', submittedAt: '2026-04-03T09:05:00', answers: { Q003: ['O006', 'O009'] } },
+            { id: 'R108', respondent: '沈俊翔', submittedAt: '2026-04-03T10:27:00', answers: { Q003: ['O006', 'O007', 'O008', 'O009'] } }
+        ]
     }
 };
+
+/**
+ * 把多筆 responses 彙整成 { totalResponses, questions: { qId: { oId: count } } }
+ */
+function aggregateResponses(responses) {
+    const out = { totalResponses: responses.length, questions: {} };
+    responses.forEach(r => {
+        Object.keys(r.answers || {}).forEach(qId => {
+            if (!out.questions[qId]) out.questions[qId] = {};
+            const ans = r.answers[qId];
+            const opts = Array.isArray(ans) ? ans : [ans];
+            opts.forEach(oId => {
+                if (oId == null) return;
+                out.questions[qId][oId] = (out.questions[qId][oId] || 0) + 1;
+            });
+        });
+    });
+    return out;
+}
 
 // runtime state（以 localStorage 為來源）
 let mockCategories = helpers.deepClone(defaultCategories);
@@ -333,44 +368,51 @@ const dataService = {
     },
 
     // ----- survey -----
+
+    /**
+     * 取得彙整結果（給長條圖用）
+     * @returns {Promise<{totalResponses, questions} | null>}
+     */
     getSurveyResponses(announcementId) {
-        // TODO: $.getJSON
-        return Promise.resolve(
-            mockSurveyResponses[announcementId]
-                ? helpers.deepClone(mockSurveyResponses[announcementId])
-                : null
-        );
+        // TODO: 實際 API 通常後端就直接回彙整：return $.getJSON(...endpoints.surveyResponses)
+        const bucket = mockSurveyResponses[announcementId];
+        if (!bucket || !bucket.responses || !bucket.responses.length) return Promise.resolve(null);
+        return Promise.resolve(aggregateResponses(bucket.responses));
+    },
+
+    /**
+     * 取得個別作答清單
+     * @returns {Promise<Array<{id, respondent, submittedAt, answers}>>}
+     */
+    getSurveyResponseList(announcementId) {
+        // TODO: 實際 API: GET .../survey-responses?detail=list
+        const bucket = mockSurveyResponses[announcementId];
+        if (!bucket || !bucket.responses) return Promise.resolve([]);
+        return Promise.resolve(helpers.deepClone(bucket.responses));
     },
 
     /**
      * 提交問卷作答
      * @param {string} announcementId
-     * @param {object} answers — { [questionId]: optionId | optionId[] }
+     * @param {object} payload — { respondent, answers }
+     *   answers: { [questionId]: optionId | optionId[] }
      * TODO: 實際應 POST endpoints.surveySubmit
      */
-    submitSurveyResponse(announcementId, answers) {
+    submitSurveyResponse(announcementId, payload) {
         return new Promise(resolve => {
             if (!mockSurveyResponses[announcementId]) {
-                mockSurveyResponses[announcementId] = {
-                    totalResponses: 0,
-                    questions: {}
-                };
+                mockSurveyResponses[announcementId] = { responses: [] };
             }
             const bucket = mockSurveyResponses[announcementId];
-            bucket.totalResponses = (bucket.totalResponses || 0) + 1;
-
-            Object.keys(answers).forEach(qId => {
-                if (!bucket.questions[qId]) bucket.questions[qId] = {};
-                const ans = answers[qId];
-                const opts = Array.isArray(ans) ? ans : [ans];
-                opts.forEach(oId => {
-                    if (!oId) return;
-                    bucket.questions[qId][oId] = (bucket.questions[qId][oId] || 0) + 1;
-                });
-            });
-
+            const record = {
+                id: 'R' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5).toUpperCase(),
+                respondent: (payload && payload.respondent) || '匿名',
+                submittedAt: new Date().toISOString(),
+                answers: (payload && payload.answers) || {}
+            };
+            bucket.responses.push(record);
             persistResponses();
-            resolve();
+            resolve(record);
         });
     }
 };

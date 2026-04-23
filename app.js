@@ -820,26 +820,67 @@ function renderResultTab() {
         `);
         return;
     }
+    renderResultContent($tab, a);
+}
 
-    dataService.getSurveyResponses(a.id).then(resp => {
-        $tab.empty();
+/**
+ * 結果主版面：summary + 子分頁（彙整 / 個別回應）
+ */
+function renderResultContent($container, announcement) {
+    $container.empty();
+    Promise.all([
+        dataService.getSurveyResponses(announcement.id),
+        dataService.getSurveyResponseList(announcement.id)
+    ]).then(([resp, list]) => {
         if (!resp || !resp.totalResponses) {
-            $tab.append(`<div class="result-empty">尚無作答資料。</div>`);
+            $container.append(`<div class="result-empty">尚無作答資料。</div>`);
             return;
         }
-        renderResultContent($tab, a, resp);
+        const typeText = announcement.surveyType === 'multi' ? '多選' : '單選';
+
+        // summary
+        $container.append(`
+            <div class="result-summary">
+                <div>
+                    <div class="result-summary-label">總作答數</div>
+                    <div class="result-summary-value">${resp.totalResponses}</div>
+                </div>
+                <div class="result-summary-type">問卷類型：${typeText}</div>
+            </div>
+        `);
+
+        // sub-tabs
+        const $tabs = $('<div style="margin-bottom:14px;">').appendTo($container);
+        const $aggBox = $('<div>').appendTo($container);
+        const $indBox = $('<div style="display:none;">').appendTo($container);
+
+        $tabs.dxTabs({
+            dataSource: [
+                { id: 'agg', text: '彙整', icon: 'chart' },
+                { id: 'ind', text: `個別回應 (${list.length})`, icon: 'detailslayout' }
+            ],
+            selectedIndex: 0,
+            onItemClick: e => {
+                if (e.itemData.id === 'agg') {
+                    $aggBox.show();
+                    $indBox.hide();
+                } else {
+                    $aggBox.hide();
+                    $indBox.show();
+                }
+            }
+        });
+
+        renderAggregationView($aggBox, announcement, resp);
+        renderIndividualView($indBox, announcement, list);
     });
 }
 
-function renderResultContent($container, announcement, resp) {
-    $container.append(`
-        <div class="field-row" style="display:flex;align-items:center;gap:16px;">
-            <strong>總作答數：</strong>
-            <span style="font-size:20px;color:#2a7ade;font-weight:600;">${resp.totalResponses}</span>
-            <span style="color:#8a8f99;">問卷類型：${announcement.surveyType === 'multi' ? '多選' : '單選'}</span>
-        </div>
-    `);
-
+/**
+ * 彙整視圖：每題長條圖
+ */
+function renderAggregationView($container, announcement, resp) {
+    $container.empty();
     announcement.surveyQuestions.forEach((q, idx) => {
         const counts = (resp.questions && resp.questions[q.id]) || {};
         const maxCount = Math.max(1, ...Object.values(counts));
@@ -847,8 +888,8 @@ function renderResultContent($container, announcement, resp) {
         const $qBox = $('<div class="result-question">').appendTo($container);
         $qBox.append(`
             <div class="result-question-title">
-                Q${idx + 1}. ${$('<div>').text(q.text).html()}
-                ${q.required ? '<span style="color:#d9534f;font-size:12px;margin-left:6px;">[必填]</span>' : ''}
+                Q${idx + 1}. ${helpers.escapeHtml(q.text)}
+                ${q.required ? '<span class="result-question-required">必填</span>' : ''}
             </div>
         `);
 
@@ -858,12 +899,117 @@ function renderResultContent($container, announcement, resp) {
             const barPct = Math.round((c / maxCount) * 100);
             $qBox.append(`
                 <div class="result-bar-row">
-                    <div title="${$('<div>').text(opt.text).html()}" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${$('<div>').text(opt.text).html()}</div>
+                    <div class="result-bar-label" title="${helpers.escapeHtml(opt.text)}">${helpers.escapeHtml(opt.text)}</div>
                     <div class="result-bar-track"><div class="result-bar-fill" style="width:${barPct}%"></div></div>
-                    <div class="result-bar-value">${c} (${pct}%)</div>
+                    <div class="result-bar-value">${c} <span style="color:var(--ink-500);">(${pct}%)</span></div>
                 </div>
             `);
         });
+    });
+}
+
+/**
+ * 個別回應視圖：DataGrid + masterDetail 看完整 Q&A
+ */
+function renderIndividualView($container, announcement, list) {
+    $container.empty();
+
+    if (!list.length) {
+        $container.append('<div class="result-empty">尚無個別作答資料。</div>');
+        return;
+    }
+
+    const qMap = {};
+    announcement.surveyQuestions.forEach(q => { qMap[q.id] = q; });
+
+    function answerToText(qId, answer) {
+        const q = qMap[qId];
+        if (!q) return '';
+        const ans = Array.isArray(answer) ? answer : [answer];
+        return ans.map(oId => {
+            const opt = q.options.find(o => o.id === oId);
+            return opt ? opt.text : '(未知)';
+        }).join('、');
+    }
+
+    const $grid = $('<div>').appendTo($container);
+    $grid.dxDataGrid({
+        dataSource: list,
+        keyExpr: 'id',
+        showBorders: true,
+        rowAlternationEnabled: true,
+        columnAutoWidth: true,
+        wordWrapEnabled: true,
+        searchPanel: { visible: true, placeholder: '搜尋姓名...', width: 220 },
+        headerFilter: { visible: true },
+        paging: { pageSize: 10 },
+        pager: { visible: true, showInfo: true },
+        columns: [
+            {
+                caption: '#',
+                width: 50,
+                alignment: 'center',
+                cellTemplate: (cell, info) => {
+                    cell.text(info.rowIndex + 1);
+                }
+            },
+            {
+                dataField: 'respondent',
+                caption: '填寫人',
+                minWidth: 120
+            },
+            {
+                dataField: 'submittedAt',
+                caption: '送出時間',
+                dataType: 'datetime',
+                format: 'yyyy-MM-dd HH:mm',
+                width: 160,
+                sortOrder: 'desc'
+            },
+            {
+                caption: '答題摘要',
+                allowFiltering: false,
+                allowSorting: false,
+                cellTemplate: (cell, info) => {
+                    const ans = info.data.answers || {};
+                    const summary = announcement.surveyQuestions.map((q, i) =>
+                        `Q${i + 1}: ${answerToText(q.id, ans[q.id])}`
+                    ).join(' ｜ ');
+                    cell.append(`<span style="color:var(--ink-700);font-size:12px;">${helpers.escapeHtml(summary)}</span>`);
+                }
+            }
+        ],
+        masterDetail: {
+            enabled: true,
+            template: (container, options) => {
+                const r = options.data;
+                const $box = $('<div style="padding:14px 18px;background:var(--surface-tint);">').appendTo(container);
+                $box.append(`
+                    <div style="margin-bottom:10px;display:flex;gap:14px;align-items:baseline;">
+                        <strong style="font-size:14px;">${helpers.escapeHtml(r.respondent)}</strong>
+                        <span style="color:var(--ink-500);font-size:12px;">送出於 ${helpers.formatDateTime(r.submittedAt)}</span>
+                    </div>
+                `);
+                announcement.surveyQuestions.forEach((q, i) => {
+                    const text = answerToText(q.id, r.answers[q.id]);
+                    $box.append(`
+                        <div style="margin-bottom:10px;padding:10px 12px;background:var(--surface);border-radius:6px;border:1px solid var(--ink-100);">
+                            <div style="font-size:13px;color:var(--ink-700);margin-bottom:4px;">
+                                <span style="color:var(--primary);font-weight:600;">Q${i + 1}.</span>
+                                ${helpers.escapeHtml(q.text)}
+                                ${q.required ? '<span class="result-question-required">必填</span>' : ''}
+                            </div>
+                            <div style="font-size:14px;color:var(--ink-900);font-weight:500;padding-left:8px;">
+                                ${text ? '→ ' + helpers.escapeHtml(text) : '<span style="color:var(--ink-300);">（未作答）</span>'}
+                            </div>
+                        </div>
+                    `);
+                });
+            }
+        },
+        export: {
+            enabled: false
+        }
     });
 }
 
@@ -878,24 +1024,18 @@ function openSurveyResultPopup(row) {
     resultPopupCurrentRow = row;
     if (!resultPopupInstance) {
         resultPopupInstance = $('#surveyResultPopup').dxPopup({
-            width: 760,
-            height: 600,
+            width: 960,
+            height: 720,
             showCloseButton: true,
             dragEnabled: true,
             hideOnOutsideClick: true,
             onShowing: () => {
                 const r = resultPopupCurrentRow;
                 if (!r) return;
-                const $body = $('#resultPopupBody').empty();
-                dataService.getSurveyResponses(r.id).then(resp => {
-                    if (!resp || !resp.totalResponses) {
-                        $body.append(`<div class="result-empty">尚無作答資料。</div>`);
-                        return;
-                    }
-                    renderResultContent($body, r, resp);
-                });
+                renderResultContent($('#resultPopupBody'), r);
             },
             contentTemplate: container => {
+                $(container).css({ padding: 0, height: '100%' });
                 $('<div id="resultPopupBody" class="popup-form">').appendTo($(container));
             }
         }).dxPopup('instance');

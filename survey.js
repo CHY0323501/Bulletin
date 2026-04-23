@@ -12,8 +12,19 @@
 const surveyState = {
     view: 'list',           // 'list' | 'fill' | 'thanks'
     selectedAnnouncement: null,
+    respondent: '',         // 填寫人姓名
     answers: {}             // { [questionId]: optionId | optionId[] }
 };
+
+const RESPONDENT_KEY = 'bulletin.respondent.v1';
+
+function loadSavedRespondent() {
+    try { return localStorage.getItem(RESPONDENT_KEY) || ''; }
+    catch (e) { return ''; }
+}
+function saveRespondent(name) {
+    try { localStorage.setItem(RESPONDENT_KEY, name || ''); } catch (e) {}
+}
 
 const SUBMITTED_KEY = 'bulletin.submitted.v1';
 
@@ -107,6 +118,7 @@ function renderFillView(announcement) {
     surveyState.view = 'fill';
     surveyState.selectedAnnouncement = helpers.deepClone(announcement);
     surveyState.answers = {};
+    surveyState.respondent = loadSavedRespondent();
 
     $('#pageTitle').text('填寫問卷');
     $('#pageSubtitle').text('請完成下列問題後送出');
@@ -150,6 +162,22 @@ function renderFillView(announcement) {
             $chip.on('click', () => dataService.downloadAttachment(f));
         });
     }
+
+    // 填寫人姓名（必填）
+    const $nameRow = $(`
+        <div class="fill-question" style="background:var(--surface-tint);padding:14px 16px;border-radius:var(--radius-sm);border-left:3px solid var(--accent);">
+            <div class="fill-question-title">
+                <span class="fill-question-index">👤</span>填寫人姓名<span class="fill-required-mark">*</span>
+            </div>
+            <div class="js-respondent" style="max-width:320px;"></div>
+        </div>
+    `).appendTo($form);
+    $nameRow.find('.js-respondent').dxTextBox({
+        value: surveyState.respondent,
+        placeholder: '請輸入您的姓名',
+        maxLength: 30,
+        onValueChanged: e => { surveyState.respondent = (e.value || '').trim(); }
+    });
 
     // 題目
     a.surveyQuestions.forEach((q, idx) => {
@@ -227,6 +255,13 @@ function renderQuestion($form, q, idx, surveyType) {
 function handleSubmit() {
     const a = surveyState.selectedAnnouncement;
 
+    // 驗證填寫人
+    if (!surveyState.respondent || !surveyState.respondent.trim()) {
+        helpers.notify('請輸入填寫人姓名', 'error');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+    }
+
     // 驗證必填
     for (let i = 0; i < a.surveyQuestions.length; i++) {
         const q = a.surveyQuestions[i];
@@ -242,14 +277,20 @@ function handleSubmit() {
     }
 
     // 確認送出
-    DevExpress.ui.dialog.confirm('確定送出問卷？送出後將無法修改答案。', '送出確認')
-        .done(yes => {
-            if (!yes) return;
-            dataService.submitSurveyResponse(a.id, surveyState.answers).then(() => {
-                markSubmitted(a.id);
-                renderThankYouView();
-            });
+    DevExpress.ui.dialog.confirm(
+        `確定以「${helpers.escapeHtml(surveyState.respondent)}」的名義送出？送出後將無法修改答案。`,
+        '送出確認'
+    ).done(yes => {
+        if (!yes) return;
+        dataService.submitSurveyResponse(a.id, {
+            respondent: surveyState.respondent.trim(),
+            answers: surveyState.answers
+        }).then(() => {
+            saveRespondent(surveyState.respondent.trim()); // 記住下次預填
+            markSubmitted(a.id);
+            renderThankYouView();
         });
+    });
 }
 
 function renderThankYouView() {
